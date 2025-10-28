@@ -7,7 +7,6 @@ import Index from "./pages/Index";
 import Browse from "./pages/Browse";
 import MovieDetail from "./pages/MovieDetail";
 import MyNFTs from "./pages/MyNFTs";
-import Creators from "./pages/Creators";
 import NotFound from "./pages/NotFound";
 import Upload from "./pages/Upload";
 
@@ -24,7 +23,6 @@ const App = () => (
           <Route path="/browse" element={<Browse />} />
           <Route path="/movie/:id" element={<MovieDetail />} />
           <Route path="/my-nfts" element={<MyNFTs />} />
-          <Route path="/creators" element={<Creators />} />
           <Route path="/upload" element={<Upload />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
