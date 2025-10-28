@@ -15,6 +15,8 @@ const UploadMovie = () => {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [description, setDescription] = useState<string>("")
   const [link, setLink] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false); 
+  const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const isConnected = user?.loggedIn
   const userAddr = user?.addr
@@ -33,41 +35,47 @@ const UploadMovie = () => {
 
   const handleSubmit = async () => {
     if (!isConnected) {
-      alert("Please connect wallet first!")
-      return authenticate()
+      alert("Please connect wallet first!");
+      return authenticate();
     }
 
     if (!movieTitle || !movieFile || !thumbnailFile) {
-      alert("Please fill all fields")
-      return
-    }
-
-    console.log("Wallet Connected:", userAddr)
-    console.log("Movie:", movieTitle)
-    console.log("Thumbnail:", thumbnailFile.name)
-    console.log("Description:", description)
-
-    console.log("Ready to upload and mint nft")
-
-    const URL: string = await requestTemporaryURL();
-    if(!URL) {
-      alert("Failed to fetch upload URL, Please try again !");
+      alert("Please fill all fields");
       return;
     }
-    const files : File[] = [movieFile, thumbnailFile]
+
+    console.log("Wallet Connected:", userAddr);
+    console.log("Movie:", movieTitle);
+    console.log("Thumbnail:", thumbnailFile.name);
+    console.log("Description:", description);
+
+    console.log("Ready to upload and mint NFT");
+
+    const URL: string = await requestTemporaryURL();
+    if (!URL) {
+      alert("Failed to fetch upload URL, Please try again!");
+      return;
+    }
+
+    const files: File[] = [movieFile, thumbnailFile];
+    setCurrentAction("The Movie is getting uploaded...");
+    setLoading(true);
     try {
       for await (const { fileName, ipfsLink } of uploadFilesToPinata(URL, files)) {
-        console.log(`Uploaded ${fileName} to IPFS: ${ipfsLink}`);
-  
         if (fileName === movieFile.name) {
+          setCurrentAction("The Thumbnail is getting uploaded...");
           setLink(ipfsLink);
-        }
+        } 
+        console.log(`Uploaded ${fileName} to IPFS: ${ipfsLink}`);
       }
-  
+
       console.log("All files uploaded successfully!");
+      setCurrentAction(null);
     } catch (err) {
       console.error("Error during upload:", err);
       alert("An error occurred during the upload process. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -138,15 +146,41 @@ const UploadMovie = () => {
 
           <Button
             size="lg"
-            disabled={!isConnected}
-            className="bg-gradient-neon shadow-neon w-full"
+            disabled={!isConnected && loading}
+            className={`bg-gradient-neon shadow-neon w-full ${loading ? "cursor-not-allowed" : ""}`}
             onClick={handleSubmit}
           >
-            Upload & Mint NFT
+            {loading ? (
+            <div className="flex items-center justify-center">
+              <svg
+                className="animate-spin h-5 w-5 mr-2 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+              </svg>
+              {currentAction || "Uploading..."}
+            </div>
+          ) : (
+            "Upload and Mint NFT"
+          )}
           </Button>
         </div>
         {link && (
-          <div>
+          <div className="bg-gradient-neon bg-clip-text text-transparent">
             Your Movie has successfully been uploaded to IPFS ! 
             <a href = {link}> View File</a>
           </div>
