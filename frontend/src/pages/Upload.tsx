@@ -4,6 +4,8 @@ import { Navbar } from "@/components/Navbar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { requestTemporaryURL } from "@/services/gatwayHandler";
+import { uploadFilesToPinata } from "@/services/pinataHandler"
 
 const UploadMovie = () => {
   const { user, authenticate } = useFlowCurrentUser()
@@ -11,7 +13,8 @@ const UploadMovie = () => {
   const [movieTitle, setMovieTitle] = useState("")
   const [movieFile, setMovieFile] = useState<File | null>(null)
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
-  const [description, setDescription] = useState("")
+  const [description, setDescription] = useState<string>("")
+  const [link, setLink] = useState<string | null>(null);
 
   const isConnected = user?.loggedIn
   const userAddr = user?.addr
@@ -44,7 +47,16 @@ const UploadMovie = () => {
     console.log("Thumbnail:", thumbnailFile.name)
     console.log("Description:", description)
 
-    alert("Ready to upload and mint nft")
+    console.log("Ready to upload and mint nft")
+
+    const URL: string = await requestTemporaryURL();
+    if(!URL) {
+      alert("Failed to fetch upload URL, Please try again !");
+      return;
+    }
+    const ipfsLink: string =  await uploadFilesToPinata(URL, movieFile);
+    console.log(`IPFS Link: ${ipfsLink}`);
+    setLink(ipfsLink);
   }
 
   return (
@@ -121,6 +133,12 @@ const UploadMovie = () => {
             Upload & Mint NFT
           </Button>
         </div>
+        {link && (
+          <div>
+            Your Movie has successfully been uploaded to IPFS ! 
+            <a href = {link}> View File</a>
+          </div>
+        )}
       </main>
     </div>
   )

@@ -2,7 +2,7 @@ import axios from "axios"
 import { PinataSDK, UploadResponse } from 'pinata';
 
 const pinata: PinataSDK = new PinataSDK({
-    pinataJwt: "",
+    pinataJwt: import.meta.env.VITE_PINATA_JWT,
     pinataGateway: import.meta.env.VITE_GATEWAY_URL
   })
 
