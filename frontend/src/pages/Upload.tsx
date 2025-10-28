@@ -54,9 +54,21 @@ const UploadMovie = () => {
       alert("Failed to fetch upload URL, Please try again !");
       return;
     }
-    const ipfsLink: string =  await uploadFilesToPinata(URL, movieFile);
-    console.log(`IPFS Link: ${ipfsLink}`);
-    setLink(ipfsLink);
+    const files : File[] = [movieFile, thumbnailFile]
+    try {
+      for await (const { fileName, ipfsLink } of uploadFilesToPinata(URL, files)) {
+        console.log(`Uploaded ${fileName} to IPFS: ${ipfsLink}`);
+  
+        if (fileName === movieFile.name) {
+          setLink(ipfsLink);
+        }
+      }
+  
+      console.log("All files uploaded successfully!");
+    } catch (err) {
+      console.error("Error during upload:", err);
+      alert("An error occurred during the upload process. Please try again.");
+    }
   }
 
   return (

@@ -6,14 +6,20 @@ const pinata: PinataSDK = new PinataSDK({
     pinataGateway: import.meta.env.VITE_GATEWAY_URL
   })
 
-export const uploadFilesToPinata = async (url : string, file: File) => {
+  export async function* uploadFilesToPinata (url: string, files: File[]) {
     try {
-        const upload: UploadResponse = await pinata.upload.public.file(file).url(url);
-        if (upload.cid) {
-            const ipfsLink: string = await pinata.gateways.public.convert(upload.cid)
-            return ipfsLink;
+        for (const file of files) {
+            console.log(`Uploading file: ${file.name}`);
+            const upload: UploadResponse = await pinata.upload.public.file(file).url(url);
+            if (upload.cid) {
+                const ipfsLink: string = await pinata.gateways.public.convert(upload.cid);
+                console.log(`File uploaded successfully: ${file.name}, IPFS Link: ${ipfsLink}`);
+                yield { fileName: file.name, ipfsLink };
+            } else {
+                throw new Error(`Failed to upload file: ${file.name}`);
+            }
         }
     } catch (err) {
-        throw new Error(`Error uploading File to IPFS. Error - ${err}`);
-    }  
-}
+        throw new Error(`Error uploading Files to IPFS. Error - ${err}`);
+    }
+};
