@@ -1,8 +1,11 @@
-import { Film, Wallet, User, Upload } from "lucide-react";
+import { Film, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Connect, useFlowCurrentUser } from "@onflow/react-sdk";
 import { Link } from "react-router-dom";
 
 export const Navbar = () => {
+  const { user } = useFlowCurrentUser();
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4">
@@ -18,13 +21,28 @@ export const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/browse" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+            <Link
+              to="/browse"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
               Browse
             </Link>
-            <Link to="/creators" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+             <Link
+              to="/upload"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              Upload
+            </Link>
+            <Link
+              to="/creators"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
               Creators
             </Link>
-            <Link to="/my-nfts" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+            <Link
+              to="/my-nfts"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
               My NFTs
             </Link>
           </div>
@@ -33,10 +51,17 @@ export const Navbar = () => {
             <Button variant="ghost" size="icon" className="relative">
               <User className="h-5 w-5" />
             </Button>
-            <Button className="gap-2 bg-gradient-neon hover:shadow-neon transition-all">
-              <Wallet className="h-4 w-4" />
-              <span className="hidden sm:inline">Connect Wallet</span>
-            </Button>
+
+            <Connect
+              onConnect={() => console.log("Wallet connected!")}
+              onDisconnect={() => console.log("Wallet disconnected")}
+            />
+
+            {user?.loggedIn && (
+              <span className="ml-2 text-sm font-medium text-foreground/80">
+                {user.addr}
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -2,40 +2,64 @@ import { Navbar } from "@/components/Navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Film, Upload } from "lucide-react";
+import { useFlowCurrentUser, Connect } from "@onflow/react-sdk";
+import { useState } from "react";
 
 const creators = [
   {
     name: "StellarFilms",
-    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop",
+    avatar:
+      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop",
     moviesCount: 5,
     verified: true,
   },
   {
     name: "CyberCinema",
-    avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=200&h=200&fit=crop",
+    avatar:
+      "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=200&h=200&fit=crop",
     moviesCount: 3,
     verified: true,
   },
   {
     name: "DeepBlueStudios",
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop",
+    avatar:
+      "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop",
     moviesCount: 7,
     verified: true,
   },
 ];
 
 const Creators = () => {
+  const { user } = useFlowCurrentUser();
+  const [requestSent, setRequestSent] = useState(false);
+
+  const handleApplyClick = () => {
+    if (!user?.loggedIn) {
+      alert("Please connect your wallet first!");
+      return;
+    }
+
+    // Mock sending verification request
+    console.log("Sending creator verification request for:", user.addr);
+    setRequestSent(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           <div className="mb-12">
             <h1 className="text-4xl font-bold mb-2">
-              Verified <span className="bg-gradient-neon bg-clip-text text-transparent">Creators</span>
+              Verified{" "}
+              <span className="bg-gradient-neon bg-clip-text text-transparent">
+                Creators
+              </span>
             </h1>
-            <p className="text-muted-foreground">Only trusted creators can upload content to our platform</p>
+            <p className="text-muted-foreground">
+              Only trusted creators can upload content to our platform
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
@@ -73,11 +97,12 @@ const Creators = () => {
               <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
                 <Upload className="h-8 w-8 text-primary" />
               </div>
-              
+
               <div>
                 <h2 className="text-3xl font-bold mb-3">Become a Creator</h2>
                 <p className="text-muted-foreground">
-                  Want to share your movies on our platform? Apply for creator verification
+                  Want to share your movies on our platform? Apply for creator
+                  verification
                 </p>
               </div>
 
@@ -102,9 +127,23 @@ const Creators = () => {
                 </div>
               </div>
 
-              <Button size="lg" className="bg-gradient-neon shadow-neon">
-                Apply for Verification
+              <Button
+                size="lg"
+                className="bg-gradient-neon shadow-neon"
+                onClick={handleApplyClick}
+              >
+                {requestSent
+                  ? "Request Sent ✅"
+                  : user?.loggedIn
+                  ? "Apply for Verification"
+                  : "Connect Wallet to Apply"}
               </Button>
+
+              {!user?.loggedIn && (
+                <div className="mt-2">
+                  <Connect />
+                </div>
+              )}
             </div>
           </div>
         </div>
