@@ -1,8 +1,9 @@
 // contracts/MovieMarketplace.cdc
-import FungibleToken from 0xee82856bf20e2aa6
-import FlowToken from 0x0ae53cb6e3f42a79
-import NonFungibleToken from 0xf8d6e0586b0a20c7
-import MovieNFT from 0xf8d6e0586b0a20c7
+import FungibleToken from 0x9a0766d93b6608b7
+import FlowToken from 0x7e60df042a9c0868
+import NonFungibleToken from 0x631e88ae7f1d7c20
+import MetadataViews from 0x631e88ae7f1d7c20
+import MovieNFT from 0x21bcdad218e253c9
 
 access(all) contract MovieMarketplace {
     
