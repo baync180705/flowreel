@@ -1,0 +1,83 @@
+# ----------------------------------------
+# ⛔ FLOW-SPECIFIC & SENSITIVE SECRETS
+# These MUST be ignored as they contain private keys or API credentials.
+# ----------------------------------------
+# Private Keys (Flow CLI)
+*.pkey
+emulator-account.pkey
+testnet-account.pkey
+
+# Environment Variables
+.env
+.env.*
+.dev.vars
+
+# Temporary/Cache Files
+imports
+wallet_data.txt
+*.pem
+
+# ----------------------------------------
+# 📦 DEPENDENCY & BUILD ARTIFACTS
+# Generated folders and package manager files
+# ----------------------------------------
+# Dependencies
+node_modules/
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+package-lock.json
+
+# Build & Distribution
+dist/
+dist-ssr
+/out/
+/build
+
+# Next.js
+.next/
+
+# 🧪 Testing & Coverage
+/coverage
+
+# ----------------------------------------
+# ⚙️ LOGS & DEBUG FILES
+# Files generated during development runs
+# ----------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ----------------------------------------
+# 💻 EDITOR & OS ARTIFACTS
+# Configuration and system files
+# ----------------------------------------
+# IDE/Editor Config (Ignores all nested files)
+.vscode/
+!.vscode/launch.json       # Whitelist: Often useful for team debugging
+!.vscode/*.code-snippets   # Whitelist: Often useful for team sharing
+!.vscode/extensions.json   # Whitelist: Useful for team consistency
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# macOS/System
+.DS_Store
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Misc/Cloud
+.wrangler
