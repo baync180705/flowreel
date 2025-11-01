@@ -7,6 +7,13 @@
 				"testnet": "0x631e88ae7f1d7c20"
 			}
 		},
+		"FungibleTokenMetadataViews": {
+			"source": "mainnet://f233dcee88fe0abe.FungibleTokenMetadataViews",
+			"aliases": {
+				"emulator": "ee82856bf20e2aa6",
+				"testnet": "9a0766d93b6608b7"
+			}
+		},
 		"MetadataViews": {
 			"source": "./node_modules/@onflow/flow-nft-contracts/contracts/MetadataViews.cdc",
 			"aliases": {
@@ -55,7 +62,70 @@
 				"emulator": "0xf8d6e0586b0a20c7",
 				"testnet": "0x21bcdad218e253c9"
 			}
-		}
+		},
+	"ProposalTypes": {
+      "source": "./cadence/contracts/structs/ProposalTypes.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+		"testnet": "0x21bcdad218e253c9"
+      }
+    },
+    "LoanTypes": {
+      "source": "./cadence/contracts/structs/LoanTypes.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+		"testnet": "0x21bcdad218e253c9"
+      }
+    },
+    "ICreatorRegistry": {
+      "source": "./cadence/contracts/interfaces/ICreatorRegistry.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+		"testnet": "0x21bcdad218e253c9"
+      }
+    },
+    "ITreasury": {
+      "source": "./cadence/contracts/interfaces/ITreasury.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+		"testnet": "0x21bcdad218e253c9"
+      }
+    },
+    "ILendingPool": {
+      "source": "./cadence/contracts/interfaces/ILendingPool.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+		"testnet": "0x21bcdad218e253c9"
+      }
+    },
+    "GToken": {
+      "source": "./cadence/contracts/core/GToken.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+		"testnet": "0x21bcdad218e253c9"
+      }
+    },
+    "GTokenDAO": {
+      "source": "./cadence/contracts/core/GTokenDAO.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+		"testnet": "0x21bcdad218e253c9"
+      }
+    },
+    "Treasury": {
+      "source": "./cadence/contracts/modules/Treasury.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+		"testnet": "0x21bcdad218e253c9"
+      }
+    },
+    "CreatorRegistry": {
+      "source": "./cadence/contracts/modules/CreatorRegistry.cdc",
+      "aliases": {
+        "emulator": "0xf8d6e0586b0a20c7",
+		"testnet": "0x21bcdad218e253c9"
+      }
+    }
 	},
 	"networks": {
 		"emulator": "127.0.0.1:3569",
@@ -83,14 +153,32 @@
 			"emulator-account": [
 				"MovieNFT",
 				"MovieMarketplace",
-				"MovieRental"
+				"MovieRental",
+				 "ProposalTypes",
+        "LoanTypes",
+        "ICreatorRegistry",
+        "ITreasury",
+        "ILendingPool",
+        "GToken",
+        "GTokenDAO",
+        "Treasury",
+        "CreatorRegistry"
 			]
 		},
 		"testnet": {
 			"testnet-account": [
 				"MovieNFT",
 				"MovieMarketplace",
-				"MovieRental"
+				"MovieRental",
+				 "ProposalTypes",
+        "LoanTypes",
+        "ICreatorRegistry",
+        "ITreasury",
+        "ILendingPool",
+        "GToken",
+        "GTokenDAO",
+        "Treasury",
+        "CreatorRegistry"
 			]
 		}
 	}
