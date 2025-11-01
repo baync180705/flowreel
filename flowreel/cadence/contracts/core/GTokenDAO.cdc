@@ -1,93 +1,95 @@
 import "FungibleToken"
 import "NonFungibleToken"
-import "../GToken.cdc"
+import GToken from "../core/GToken.cdc"
+import ProposalTypes from "../structs/ProposalTypes.cdc"
 
+/// GTokenDAO
+///
+/// Main DAO contract for FlowReel governance
+/// Manages proposals, voting, and DAO operations
+///
 access(all) contract GTokenDAO {
+    
+    /// Storage
     access(contract) var proposals: [Proposal]
     access(contract) var votedRecords: [{Address: Int}]
     access(contract) var totalProposals: Int
     access(all) var tokensForProposal: UFix64
 
-  //CREATOR VERIFICATION STORAGE
-    access(contract) var verifiedCreators:{Address: CreatorProfile}
-    access(contract) var pendingCreatorApplications:{Address: CreatorApplication}
-    access(contract) var creatorVerificationProposals: {Int:Address}
+    /// Creator Verification Storage
+    access(contract) var verifiedCreators: {Address: CreatorProfile}
+    access(contract) var pendingCreatorApplications: {Address: CreatorApplication}
+    access(contract) var creatorVerificationProposals: {Int: Address}
 
+    /// Paths
     access(all) let ProposerStoragePath: StoragePath
     access(all) let VoterStoragePath: StoragePath
     access(all) let VoterPublicPath: PublicPath
     access(all) let AdminStoragePath: StoragePath
-    // Events
+
+    /// Events
     access(all) event ContractInitialized()
     access(all) event ProposalCreated(Title: String, Proposer: Address, MinHoldedGVTAmount: UFix64?)
     access(all) event VoteSubmitted(Voter: Address, ProposalId: Int, OptionIndex: Int)
-    // Creator Verification Events
+    
+    /// Creator Verification Events
     access(all) event CreatorApplicationSubmitted(applicant: Address, timestamp: UFix64)
     access(all) event CreatorVerificationProposalCreated(proposalId: Int, applicant: Address)
     access(all) event CreatorVerified(creator: Address, timestamp: UFix64)
     access(all) event CreatorRejected(creator: Address, timestamp: UFix64)
     access(all) event CreatorRevoked(creator: Address, timestamp: UFix64)
 
-    access(all) struct CreatorProfile{
-      access(all) let address: Address
-      access(all) let name: String 
-      access(all) let portfolioUrl: String
-      access(all) let verifiedAt: UFix64
-      access(all) var isActive:Bool
-      init(
-        address:Address,
-        name:String,
-        portfolioUrl:String
-      ){
-        self.address = address
-        self.portfolioUrl = portfolioUrl
-        self.name = name
-        self.verifiedAt = getCurrentBlock().timestamp
-        self.isActive = true
-      }
-      access(all) fun deactivate(){
-        self.isActive = false
-      }
+    /// CreatorProfile
+    ///
+    /// Struct containing verified creator information
+    ///
+    access(all) struct CreatorProfile {
+        access(all) let address: Address
+        access(all) let name: String 
+        access(all) let portfolioUrl: String
+        access(all) let verifiedAt: UFix64
+        access(all) var isActive: Bool
+
+        init(address: Address, name: String, portfolioUrl: String) {
+            self.address = address
+            self.portfolioUrl = portfolioUrl
+            self.name = name
+            self.verifiedAt = getCurrentBlock().timestamp
+            self.isActive = true
+        }
+
+        access(all) fun deactivate() {
+            self.isActive = false
+        }
     }
 
-  //Struct for all pending creator applications y'a know
-  access(all) struct CreatorApplication{
-    access(all) let applicant: Address
-    access (all) let name: String
-    access(all) let portfolioUrl: String
-    access(all) let appliedAt: UFix64
-    init(
-      applicant:Address,
-      name:String,
-      portfolioUrl:String
-    ){
-      self.applicant = applicant
-      self.name = name
-      self.portfolioUrl = portfolioUrl
-      self.appliedAt = getCurrentBlock().timestamp
-    }
-  }
+    /// CreatorApplication
+    ///
+    /// Struct for pending creator applications
+    ///
+    access(all) struct CreatorApplication {
+        access(all) let applicant: Address
+        access(all) let name: String
+        access(all) let portfolioUrl: String
+        access(all) let appliedAt: UFix64
 
-  access(all) enum ProposalType:UInt8{
-    access(all) case General
-    access(all) case CreatorVerification
-    access(all) case CreatorRevocation
-  }
-
-    // Function to allow users to claim a proposer resource
-    access(all) fun claimProposer(): @GTokenDAO.Proposer {
-        return <-create Proposer()
+        init(applicant: Address, name: String, portfolioUrl: String) {
+            self.applicant = applicant
+            self.name = name
+            self.portfolioUrl = portfolioUrl
+            self.appliedAt = getCurrentBlock().timestamp
+        }
     }
 
     /// Proposer
     ///
-    /// Resource object that can create new proposals.
+    /// Resource object that can create new proposals
     ///
     access(all) resource Proposer {
 
         /// addProposal
         ///
-        /// Function that creates new proposals.
+        /// Function that creates new proposals
         ///
         access(all) fun addProposal(
             title: String,
@@ -100,7 +102,7 @@ access(all) contract GTokenDAO {
             // Validate proposer has enough tokens
             let proposerGVT = GTokenDAO.getHoldedGVT(address: self.owner!.address)
             assert(proposerGVT >= GTokenDAO.tokensForProposal, message: "Proposer doesn't have enough GVT")
-            //!Take a look at this
+
             GTokenDAO.proposals.append(Proposal(
                 proposer: self.owner!.address,
                 title: title,
@@ -109,47 +111,55 @@ access(all) contract GTokenDAO {
                 startAt: startAt,
                 endAt: endAt,
                 minHoldedGVTAmount: minHoldedGVTAmount,
-                proposalType: ProposalType.General
+                proposalType: ProposalTypes.ProposalType.General
             ))
 
             GTokenDAO.votedRecords.append({})
             GTokenDAO.totalProposals = GTokenDAO.totalProposals + 1
         }
 
+        /// addCreatorVerificationProposal
+        ///
+        /// Create a proposal for creator verification
+        ///
         access(all) fun addCreatorVerificationProposal(
-          applicantAddress:Address,
-          startAt:UFix64?,
-          endAt:UFix64?,
-          minHoldedGVTAmount:UFix64?
-        ){
-          pre{
-            GTokenDAO.pendingCreatorApplications[applicantAddress] != nil: "No pending application for this address"
-            GTokenDAO.verifiedCreators[applicantAddress] == nil: "Creator already verified"
-          }
-          let proposerGVT=GTokenDAO.getHoldedGVT(address: self.owner!.address)
-          assert(proposerGVT>=GTokenDAO.tokensForProposal, message: "Proposer doesn't have enough GVT")
+            applicantAddress: Address,
+            startAt: UFix64?,
+            endAt: UFix64?,
+            minHoldedGVTAmount: UFix64?
+        ) {
+            pre {
+                GTokenDAO.pendingCreatorApplications[applicantAddress] != nil: "No pending application for this address"
+                GTokenDAO.verifiedCreators[applicantAddress] == nil: "Creator already verified"
+            }
 
-          let application=GTokenDAO.pendingCreatorApplications[applicantAddress]!
-          let title = "Creator Verification: ".concat(application.name)
-          let description = "Verify ".concat(application.name).concat(" as a content creator.\n\n")
+            let proposerGVT = GTokenDAO.getHoldedGVT(address: self.owner!.address)
+            assert(proposerGVT >= GTokenDAO.tokensForProposal, message: "Proposer doesn't have enough GVT")
+
+            let application = GTokenDAO.pendingCreatorApplications[applicantAddress]!
+            let title = "Creator Verification: ".concat(application.name)
+            let description = "Verify ".concat(application.name).concat(" as a content creator.\n\n")
                 .concat("Portfolio: ").concat(application.portfolioUrl)
 
-          let proposalId = GTokenDAO.totalProposals
-          GTokenDAO.proposals.append(Proposal(
-              proposer: self.owner!.address,
-              title: title,
-              description: description,
-              options: ["Approve", "Reject"],
-              startAt: startAt,
-              endAt: endAt,
-              minHoldedGVTAmount: minHoldedGVTAmount,
-              proposalType: ProposalType.CreatorVerification
-          ))
-          GTokenDAO.votedRecords.append({})
-          GTokenDAO.creatorVerificationProposals[proposalId] = applicantAddress
-          GTokenDAO.totalProposals = GTokenDAO.totalProposals + 1
-          emit CreatorVerificationProposalCreated(proposalId: proposalId, applicant: applicantAddress)
+            let proposalId = GTokenDAO.totalProposals
+            GTokenDAO.proposals.append(Proposal(
+                proposer: self.owner!.address,
+                title: title,
+                description: description,
+                options: ["Approve", "Reject"],
+                startAt: startAt,
+                endAt: endAt,
+                minHoldedGVTAmount: minHoldedGVTAmount,
+                proposalType: ProposalTypes.ProposalType.CreatorVerification
+            ))
+
+            GTokenDAO.votedRecords.append({})
+            GTokenDAO.creatorVerificationProposals[proposalId] = applicantAddress
+            GTokenDAO.totalProposals = GTokenDAO.totalProposals + 1
+            
+            emit CreatorVerificationProposalCreated(proposalId: proposalId, applicant: applicantAddress)
         }
+
         /// updateProposal
         ///
         /// Function to update an existing proposal
@@ -175,8 +185,12 @@ access(all) contract GTokenDAO {
             )
         }
     }
-    //Administrator
-        access(all) resource Administrator {
+
+    /// Administrator
+    ///
+    /// Resource for admin operations
+    ///
+    access(all) resource Administrator {
         
         /// verifyCreatorDirectly
         ///
@@ -193,11 +207,11 @@ access(all) contract GTokenDAO {
             let profile = CreatorProfile(
                 address: applicantAddress,
                 name: application.name,
-                portfolioUrl: application.portfolioUrl,
+                portfolioUrl: application.portfolioUrl
             )
 
             GTokenDAO.verifiedCreators[applicantAddress] = profile
-            let removed=GTokenDAO.pendingCreatorApplications.remove(key: applicantAddress)
+            GTokenDAO.pendingCreatorApplications.remove(key: applicantAddress)
 
             emit CreatorVerified(creator: applicantAddress, timestamp: getCurrentBlock().timestamp)
         }
@@ -211,7 +225,7 @@ access(all) contract GTokenDAO {
                 GTokenDAO.verifiedCreators[creatorAddress] != nil: "Creator not verified"
             }
 
-            let revoked=  GTokenDAO.verifiedCreators[creatorAddress]?.deactivate()
+            GTokenDAO.verifiedCreators[creatorAddress]?.deactivate()
             emit CreatorRevoked(creator: creatorAddress, timestamp: getCurrentBlock().timestamp)
         }
 
@@ -224,10 +238,11 @@ access(all) contract GTokenDAO {
                 GTokenDAO.pendingCreatorApplications[applicantAddress] != nil: "No pending application"
             }
 
-            let rejected=GTokenDAO.pendingCreatorApplications.remove(key: applicantAddress)
+            GTokenDAO.pendingCreatorApplications.remove(key: applicantAddress)
             emit CreatorRejected(creator: applicantAddress, timestamp: getCurrentBlock().timestamp)
         }
     }
+
     /// VoterPublic
     ///
     /// Public interface for Voter resource
@@ -255,7 +270,6 @@ access(all) contract GTokenDAO {
                 optionIndex < GTokenDAO.proposals[proposalId].options.length: "Invalid option"
             }
 
-            // Check voting requirements
             let voterAddr = self.owner!.address
             let proposal = GTokenDAO.proposals[proposalId]
             
@@ -292,8 +306,7 @@ access(all) contract GTokenDAO {
         access(all) var title: String
         access(all) var description: String
         access(all) var options: [String]
-        access(all) let proposalType: ProposalType
-        // options index <-> result mapping
+        access(all) let proposalType: ProposalTypes.ProposalType
         access(all) var votesCountActual: [UInt64]
         access(all) let createdAt: UFix64
         access(all) var updatedAt: UFix64
@@ -304,6 +317,7 @@ access(all) contract GTokenDAO {
         access(all) var voided: Bool
         access(all) let minHoldedGVTAmount: UFix64
         access(all) var executed: Bool
+
         init(
             proposer: Address,
             title: String,
@@ -312,7 +326,7 @@ access(all) contract GTokenDAO {
             startAt: UFix64?,
             endAt: UFix64?,
             minHoldedGVTAmount: UFix64?,
-            proposalType: ProposalType
+            proposalType: ProposalTypes.ProposalType
         ) {
             pre {
                 title.length <= 1000: "New title too long"
@@ -326,22 +340,20 @@ access(all) contract GTokenDAO {
             self.votesCountActual = []
             self.minHoldedGVTAmount = minHoldedGVTAmount ?? 0.0
             self.proposalType = proposalType
+
             for option in options {
                 self.votesCountActual.append(0)
             }
 
             self.id = GTokenDAO.totalProposals
-
             self.sealed = false
             self.countIndex = 0
             self.executed = false
 
             self.createdAt = getCurrentBlock().timestamp
             self.updatedAt = getCurrentBlock().timestamp
-
             self.startAt = startAt ?? getCurrentBlock().timestamp
             self.endAt = endAt ?? (self.createdAt + 86400.0 * 14.0) // 14 days default
-
             self.voided = false
 
             emit ProposalCreated(Title: title, Proposer: proposer, MinHoldedGVTAmount: minHoldedGVTAmount)
@@ -382,14 +394,12 @@ access(all) contract GTokenDAO {
             }
 
             GTokenDAO.votedRecords[self.id][voterAddr] = optionIndex
-
             emit VoteSubmitted(Voter: voterAddr, ProposalId: self.id, OptionIndex: optionIndex)
         }
 
         /// count
         ///
         /// Function to count votes in batches
-        /// @return Array of vote counts for each option
         ///
         access(all) fun count(size: Int): [UInt64] {
             if self.isEnded() == false {
@@ -399,12 +409,9 @@ access(all) contract GTokenDAO {
                 return self.votesCountActual
             }
             
-            // Fetch the keys of everyone who has voted on this proposal
             let votedList = GTokenDAO.votedRecords[self.id].keys
-            // Count from the last time you counted
             var batchEnd = self.countIndex + size
-            // If the count index is bigger than the number of voters
-            // set the count index to the number of voters
+            
             if batchEnd > votedList.length {
                 batchEnd = votedList.length
             }
@@ -413,12 +420,10 @@ access(all) contract GTokenDAO {
                 let address = votedList[self.countIndex]
                 let votedOptionIndex = GTokenDAO.votedRecords[self.id][address]!
                 self.votesCountActual[votedOptionIndex] = self.votesCountActual[votedOptionIndex] + 1
-
                 self.countIndex = self.countIndex + 1
             }
 
             self.sealed = self.countIndex == votedList.length
-
             return self.votesCountActual
         }
 
@@ -433,6 +438,7 @@ access(all) contract GTokenDAO {
         access(all) fun getTotalVoted(): Int {
             return GTokenDAO.votedRecords[self.id].keys.length
         }
+
         access(all) fun getWinningOption(): Int? {
             if !self.sealed {
                 return nil
@@ -456,7 +462,11 @@ access(all) contract GTokenDAO {
         }
     }
 
-     access(all) fun submitCreatorApplication(
+    /// submitCreatorApplication
+    ///
+    /// Submit an application for creator verification
+    ///
+    access(all) fun submitCreatorApplication(
         applicant: Address,
         name: String,
         bio: String,
@@ -473,7 +483,7 @@ access(all) contract GTokenDAO {
         let application = CreatorApplication(
             applicant: applicant,
             name: name,
-            portfolioUrl: portfolioUrl,
+            portfolioUrl: portfolioUrl
         )
 
         self.pendingCreatorApplications[applicant] = application
@@ -487,12 +497,12 @@ access(all) contract GTokenDAO {
     access(all) fun executeCreatorVerification(proposalId: Int) {
         pre {
             proposalId < self.proposals.length: "Invalid proposal ID"
-            self.proposals[proposalId].proposalType == ProposalType.CreatorVerification: "Not a creator verification proposal"
+            self.proposals[proposalId].proposalType == ProposalTypes.ProposalType.CreatorVerification: "Not a creator verification proposal"
             self.proposals[proposalId].sealed: "Proposal not sealed yet"
-           // self.proposals[proposalId].isEnded(): "Voting not ended"
             !self.proposals[proposalId].executed: "Already executed"
             self.creatorVerificationProposals[proposalId] != nil: "No creator linked to this proposal"
         }
+
         assert(getCurrentBlock().timestamp >= self.proposals[proposalId].endAt, message: "Voting not ended")
 
         let proposal = self.proposals[proposalId]
@@ -501,32 +511,28 @@ access(all) contract GTokenDAO {
 
         // Option 0 = Approve, Option 1 = Reject
         if winningOption == 0 {
-            // Approve
             let application = self.pendingCreatorApplications[applicantAddress]!
             
             let profile = CreatorProfile(
                 address: applicantAddress,
                 name: application.name,
-                portfolioUrl: application.portfolioUrl,
+                portfolioUrl: application.portfolioUrl
             )
 
             self.verifiedCreators[applicantAddress] = profile
-            let removed=self.pendingCreatorApplications.remove(key: applicantAddress)
+            self.pendingCreatorApplications.remove(key: applicantAddress)
 
             emit CreatorVerified(creator: applicantAddress, timestamp: getCurrentBlock().timestamp)
         } else {
-            // Reject
-           let rem=self.pendingCreatorApplications.remove(key: applicantAddress)
+            self.pendingCreatorApplications.remove(key: applicantAddress)
             emit CreatorRejected(creator: applicantAddress, timestamp: getCurrentBlock().timestamp)
         }
 
         self.proposals[proposalId].markExecuted()
     }
 
-    /// isCreatorVerified
-    ///
-    /// Check if an address is a verified and active creator
-    ///
+    /// Public Functions
+    
     access(all) view fun isCreatorVerified(creator: Address): Bool {
         if let profile = self.verifiedCreators[creator] {
             return profile.isActive
@@ -534,97 +540,58 @@ access(all) contract GTokenDAO {
         return false
     }
 
-    /// getCreatorProfile
-    ///
-    /// Get a creator's profile if verified
-    ///
     access(all) fun getCreatorProfile(creator: Address): CreatorProfile? {
         return self.verifiedCreators[creator]
     }
 
-    /// getPendingApplication
-    ///
-    /// Get a pending creator application
-    ///
     access(all) fun getPendingApplication(applicant: Address): CreatorApplication? {
         return self.pendingCreatorApplications[applicant]
     }
 
-    /// getAllVerifiedCreators
-    ///
-    /// Get all verified creator addresses
-    ///
     access(all) fun getAllVerifiedCreators(): [Address] {
         return self.verifiedCreators.keys
     }
 
-    /// getAllPendingApplications
-    ///
-    /// Get all pending application addresses
-    ///
     access(all) fun getAllPendingApplications(): [Address] {
         return self.pendingCreatorApplications.keys
     }
-    /// getHoldedGVT
-    ///
-    /// Get the GVT balance of an address
-    ///
+
     access(all) view fun getHoldedGVT(address: Address): UFix64 {
         let acct = getAccount(address)
         let vaultRef = acct.capabilities.borrow<&{FungibleToken.Balance}>(GToken.VaultPublicPath)
             ?? panic("Could not borrow Balance reference to the Vault")
-
         return vaultRef.balance
     }
 
-    /// getProposals
-    ///
-    /// Returns all proposals
-    ///
     access(all) fun getProposals(): [Proposal] {
         return self.proposals
     }
 
-    /// getProposalsLength
-    ///
-    /// Returns the number of proposals
-    ///
     access(all) fun getProposalsLength(): Int {
         return self.proposals.length
     }
 
-    /// getProposal
-    ///
-    /// Get a specific proposal by ID
-    ///
     access(all) fun getProposal(id: UInt64): Proposal {
         return self.proposals[id]
     }
 
-    /// count
-    ///
-    /// Count votes for a proposal
-    ///
     access(all) fun count(proposalId: UInt64, maxSize: Int): [UInt64] {
         return self.proposals[proposalId].count(size: maxSize)
     }
 
-    /// getVotedRecords
-    ///
-    /// Returns all voting records
-    ///
     access(all) fun getVotedRecords(): [{Address: Int}] {
         return self.votedRecords
     }
 
-    /// initVoter
-    ///
-    /// Create a new Voter resource
-    ///
+    access(all) fun claimProposer(): @GTokenDAO.Proposer {
+        return <-create Proposer()
+    }
+
     access(all) fun initVoter(): @GTokenDAO.Voter {
         return <-create Voter()
     }
-     access(all) fun claimAdmin(): @GTokenDAO.Administrator {
+
+    access(all) fun claimAdmin(): @GTokenDAO.Administrator {
         return <-create Administrator()
     }
 
@@ -643,12 +610,10 @@ access(all) contract GTokenDAO {
         self.VoterPublicPath = /public/GTokenDAOVoter
         self.AdminStoragePath = /storage/GTokenDAOAdmin
 
-        // Save initial resources
         self.account.storage.save(<-create Proposer(), to: self.ProposerStoragePath)
         self.account.storage.save(<-create Voter(), to: self.VoterStoragePath)
         self.account.storage.save(<-create Administrator(), to: self.AdminStoragePath)
         
-        // Create and publish capability
         let voterCap = self.account.capabilities.storage.issue<&GTokenDAO.Voter>(
             self.VoterStoragePath
         )

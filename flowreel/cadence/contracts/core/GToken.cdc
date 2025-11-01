@@ -3,7 +3,9 @@ import "MetadataViews"
 import "FungibleTokenMetadataViews"
 import "ViewResolver"
 
-// Token contract for GToken (GVT)
+/// GToken (GVT) - Governance token for FlowReel DAO
+/// Total supply: 600M tokens
+/// Used for: Governance voting, creator verification, lending collateral
 access(all) contract GToken: FungibleToken {
     /// Total supply of GTokens in existence
     access(all) var totalSupply: UFix64
@@ -14,25 +16,13 @@ access(all) contract GToken: FungibleToken {
     access(all) let ReceiverPublicPath: PublicPath
     access(all) let AdminStoragePath: StoragePath
 
-    /// The event that is emitted when the contract is created
+    /// Events
     access(all) event TokensInitialized(initialSupply: UFix64)
-
-    /// The event that is emitted when tokens are withdrawn from a Vault
     access(all) event TokensWithdrawn(amount: UFix64, from: Address?)
-
-    /// The event that is emitted when tokens are deposited to a Vault
     access(all) event TokensDeposited(amount: UFix64, to: Address?)
-
-    /// The event that is emitted when new tokens are minted
     access(all) event TokensMinted(amount: UFix64)
-
-    /// The event that is emitted when tokens are destroyed
     access(all) event TokensBurned(amount: UFix64)
-
-    /// The event that is emitted when a new minter resource is created
     access(all) event MinterCreated(allowedAmount: UFix64)
-
-    /// The event that is emitted when a new burner resource is created
     access(all) event BurnerCreated()
 
     /// Vault
@@ -102,9 +92,11 @@ access(all) contract GToken: FungibleToken {
         access(all) view fun isSupportedVaultType(type: Type): Bool {
             return type == Type<@GToken.Vault>()
         }
+
         access(all) view fun isAvailableToWithdraw(amount: UFix64): Bool {
             return self.balance >= amount
         }
+
         /// getViews
         ///
         /// @return An array of Types defining the implemented views.
@@ -132,19 +124,19 @@ access(all) contract GToken: FungibleToken {
                 case Type<FungibleTokenMetadataViews.FTDisplay>():
                     let media = MetadataViews.Media(
                         file: MetadataViews.HTTPFile(
-                            url: "https://www.blockversity.xyz/img/logo-1-1@1x.png"
+                            url: "https://www.flowreel.xyz/img/logo.png"
                         ),
                         mediaType: "image/png"
                     )
                     let medias = MetadataViews.Medias([media])
                     return FungibleTokenMetadataViews.FTDisplay(
-                        name: "Sample Fungible Token",
+                        name: "FlowReel Governance Token",
                         symbol: "GVT",
-                        description: "This fungible token is used as a governance token for the Sample DAO built on Flow",
-                        externalURL: MetadataViews.ExternalURL("https://www.blockversity.xyz/"),
+                        description: "Governance token for FlowReel DAO - a decentralized streaming platform on Flow",
+                        externalURL: MetadataViews.ExternalURL("https://www.flowreel.xyz/"),
                         logos: medias,
                         socials: {
-                            "twitter": MetadataViews.ExternalURL("https://twitter.com/BlockV3rsity")
+                            "twitter": MetadataViews.ExternalURL("https://twitter.com/FlowReel")
                         }
                     )
                 case Type<FungibleTokenMetadataViews.FTVaultData>():
@@ -155,7 +147,7 @@ access(all) contract GToken: FungibleToken {
                         receiverLinkedType: Type<&GToken.Vault>(),
                         metadataLinkedType: Type<&GToken.Vault>(),
                         createEmptyVaultFunction: (fun(): @{FungibleToken.Vault} {
-                            return <-GToken.createEmptyVault(vaultType:Type<@GToken.Vault>())
+                            return <-GToken.createEmptyVault(vaultType: Type<@GToken.Vault>())
                         })
                     )
             }
@@ -207,19 +199,19 @@ access(all) contract GToken: FungibleToken {
             case Type<FungibleTokenMetadataViews.FTDisplay>():
                 let media = MetadataViews.Media(
                     file: MetadataViews.HTTPFile(
-                        url: "https://www.blockversity.xyz/img/logo-1-1@1x.png"
+                        url: "https://www.flowreel.xyz/img/logo.png"
                     ),
                     mediaType: "image/png"
                 )
                 let medias = MetadataViews.Medias([media])
                 return FungibleTokenMetadataViews.FTDisplay(
-                    name: "Sample Fungible Token",
+                    name: "FlowReel Governance Token",
                     symbol: "GVT",
-                    description: "This fungible token is used as a governance token for the Sample DAO built on Flow",
-                    externalURL: MetadataViews.ExternalURL("https://www.blockversity.xyz/"),
+                    description: "Governance token for FlowReel DAO - a decentralized streaming platform on Flow",
+                    externalURL: MetadataViews.ExternalURL("https://www.flowreel.xyz/"),
                     logos: medias,
                     socials: {
-                        "twitter": MetadataViews.ExternalURL("https://twitter.com/BlockV3rsity")
+                        "twitter": MetadataViews.ExternalURL("https://twitter.com/FlowReel")
                     }
                 )
             case Type<FungibleTokenMetadataViews.FTVaultData>():
